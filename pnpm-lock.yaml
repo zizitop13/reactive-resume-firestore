@@ -402,6 +402,9 @@ importers:
       fast-png:
         specifier: ^8.0.0
         version: 8.0.0
+      firebase-admin:
+        specifier: ^13.10.0
+        version: 13.10.0(@firebase/app-compat@0.5.18)(@firebase/app@0.16.2)(supports-color@7.2.0)
       hono:
         specifier: ^4.13.8
         version: 4.13.8
