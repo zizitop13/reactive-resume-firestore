@@ -41,7 +41,7 @@ const toSession = (user: NonNullable<ReturnType<typeof getFirebaseAuth>["current
 			image: user.photoURL,
 			createdAt: now,
 			updatedAt: now,
-			username: slugify(user.displayName ?? user.email?.split("@")[0] ?? user.uid),
+			username: `${slugify(user.displayName ?? user.email?.split("@")[0] ?? "user")}-${user.uid}`,
 			displayUsername: user.displayName ?? user.email?.split("@")[0] ?? user.uid,
 			twoFactorEnabled: false,
 			role: "user",
