@@ -11,6 +11,7 @@ import { MobileBuilderShell } from "./-components/mobile-builder-shell";
 import { getBuilderLayout } from "./-store/sidebar";
 
 export const Route = createFileRoute("/builder/$resumeId")({
+	ssr: false,
 	component: RouteComponent,
 	beforeLoad: ({ context }) => {
 		if (!context.session) throw redirect({ to: "/auth/login", replace: true });

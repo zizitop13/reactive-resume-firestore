@@ -32,6 +32,12 @@ export const env = createEnv({
 		// Authentication
 		AUTH_SECRET: z.string().min(1),
 		BETTER_AUTH_API_KEY: z.string().min(1).optional(),
+		FIREBASE_PROJECT_ID: z.string().min(1).optional(),
+		FIREBASE_CLIENT_EMAIL: z.email().optional(),
+		FIREBASE_PRIVATE_KEY: z.string().min(1).optional(),
+		VITE_FIREBASE_API_KEY: z.string().min(1).optional(),
+		VITE_FIREBASE_AUTH_DOMAIN: z.string().min(1).optional(),
+		VITE_FIREBASE_PROJECT_ID: z.string().min(1).optional(),
 
 		// Social Auth (Google)
 		GOOGLE_CLIENT_ID: z.string().min(1).optional(),

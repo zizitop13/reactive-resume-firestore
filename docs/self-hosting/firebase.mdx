@@ -1,0 +1,49 @@
+---
+title: Firebase Authentication and Firestore
+description: Use Firebase Authentication for the web UI and Firestore for resume persistence.
+---
+
+# Firebase Authentication and Firestore
+
+Firebase mode is optional. Reactive Resume keeps using Better Auth and PostgreSQL unless every Firebase variable below is
+present. When enabled, UI sign-in uses Firebase Authentication, API requests carry Firebase ID tokens, and resume data,
+version history, passwords, and statistics are stored in Firestore.
+
+PostgreSQL is still required for features outside the resume editor, including applications, cover letters, API keys,
+OAuth/MCP, and the AI agent workspace. Uploaded images and generated PDFs continue to use local or S3-compatible object
+storage; Firestore is not used for binary files.
+
+## Configuration
+
+Create a Firebase web app and a service account, then set:
+
+```env
+FIREBASE_PROJECT_ID="your-project-id"
+FIREBASE_CLIENT_EMAIL="firebase-adminsdk@example.iam.gserviceaccount.com"
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+
+VITE_FIREBASE_API_KEY="your-web-api-key"
+VITE_FIREBASE_AUTH_DOMAIN="your-project-id.firebaseapp.com"
+VITE_FIREBASE_PROJECT_ID="your-project-id"
+```
+
+Enable Email/Password and, if desired, Google in Firebase Authentication. Add the deployment hostname to Firebase
+Authentication's authorized domains.
+
+Deploy the included Firestore rules and indexes:
+
+```bash
+firebase deploy --only firestore:rules,firestore:indexes
+```
+
+`firestore.rules` denies direct browser access. All Firestore reads and writes pass through the Reactive Resume server,
+where Firebase ID tokens and document ownership are validated.
+
+## Data layout
+
+- `resumes/{resumeId}` stores resume data and aggregate statistics.
+- `resumes/{resumeId}/versions/{versionId}` stores bounded version snapshots.
+- `resumes/{resumeId}/statisticsDaily/{yyyy-mm-dd}` stores daily view and download counters.
+
+Changing storage modes does not migrate existing resumes. Export resumes before switching, then import them after signing
+in with Firebase.

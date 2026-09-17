@@ -1,11 +1,13 @@
 import { RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
+import { initializeFirebaseAuth } from "./libs/auth/firebase";
 import { getRouter } from "./router";
 import "./index.css";
 
 const rootElement = document.getElementById("app");
 if (!rootElement) throw new Error("Root element not found");
 
+await initializeFirebaseAuth();
 const router = await getRouter();
 
 // Server metadata describes the initial URL. The SPA router owns these tags after
