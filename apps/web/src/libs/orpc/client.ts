@@ -4,16 +4,26 @@ import { createORPCClient, onError } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import { BatchLinkPlugin } from "@orpc/client/plugins";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
+import { getFirebaseIdToken, isFirebaseEnabled } from "../auth/firebase";
 
 const getRpcUrl = () => {
 	if (typeof window === "undefined") return "http://localhost:3000/api/rpc";
 	return `${window.location.origin}/api/rpc`;
 };
 
+const authenticatedFetch: typeof fetch = async (request, init) => {
+	const headers = new Headers(init?.headers);
+	if (isFirebaseEnabled && typeof window !== "undefined") {
+		const token = await getFirebaseIdToken();
+		if (token) headers.set("Authorization", `Bearer ${token}`);
+	}
+	return fetch(request, { ...init, headers, credentials: "include" });
+};
+
 export const client: RouterClient<typeof router> = createORPCClient(
 	new RPCLink({
 		url: getRpcUrl(),
-		fetch: (request, init) => fetch(request, { ...init, credentials: "include" }),
+		fetch: authenticatedFetch,
 		plugins: [
 			new BatchLinkPlugin({
 				mode: "streaming",
@@ -32,7 +42,7 @@ export const client: RouterClient<typeof router> = createORPCClient(
 export const streamClient: RouterClient<typeof router> = createORPCClient(
 	new RPCLink({
 		url: getRpcUrl(),
-		fetch: (request, init) => fetch(request, { ...init, credentials: "include" }),
+		fetch: authenticatedFetch,
 		interceptors: [
 			onError((error) => {
 				if (error instanceof DOMException && error.name === "AbortError") return;

@@ -4,14 +4,14 @@ import { m } from "motion/react";
 import { Button } from "@reactive-resume/ui/components/button";
 import { Separator } from "@reactive-resume/ui/components/separator";
 import { useDialogStore } from "@/dialogs/store";
-import { authClient } from "@/libs/auth/client";
+import { useAuthSession } from "@/libs/auth/use-session";
 import { ActionButton } from "./action-button";
 import { useAuthAccounts } from "./hooks";
 
 export function TwoFactorSection() {
 	const { openDialog } = useDialogStore();
 	const { hasAccount } = useAuthAccounts();
-	const { data: session } = authClient.useSession();
+	const { data: session } = useAuthSession();
 
 	const hasPassword = hasAccount("credential");
 	const hasTwoFactor = session?.user.twoFactorEnabled ?? false;

@@ -1,11 +1,13 @@
 import { Trans } from "@lingui/react/macro";
 import { createFileRoute, Outlet, redirect, useRouter } from "@tanstack/react-router";
 import { SidebarProvider } from "@reactive-resume/ui/components/sidebar";
+import { isFirebaseEnabled } from "@/libs/auth/firebase";
 import { createNoindexFollowMeta } from "@/libs/seo";
 import { getDashboardSidebarState, setDashboardSidebarState } from "./-components/functions";
 import { DashboardSidebar } from "./-components/sidebar";
 
 export const Route = createFileRoute("/dashboard")({
+	ssr: !isFirebaseEnabled,
 	component: RouteComponent,
 	beforeLoad: ({ context }) => {
 		if (!context.session) throw redirect({ to: "/auth/login", replace: true });

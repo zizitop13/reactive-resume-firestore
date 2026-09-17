@@ -11,6 +11,7 @@ import { FormControl, FormItem, FormLabel, FormMessage } from "@reactive-resume/
 import { Input } from "@reactive-resume/ui/components/input";
 import { toast } from "@reactive-resume/ui/components/toast";
 import { authClient } from "@/libs/auth/client";
+import { isFirebaseEnabled, signUpWithFirebase } from "@/libs/auth/firebase";
 import { useAppForm } from "@/libs/tanstack-form";
 import { SocialAuth } from "../components/social-auth";
 import { getOAuthSignInOptions, isOAuthRedirect } from "../redirect";
@@ -44,6 +45,20 @@ export function RegisterPage({ disableEmailAuth }: Props) {
 		validators: { onSubmit: formSchema },
 		onSubmit: async ({ value }) => {
 			const toastId = toast.add({ type: "loading", description: t`Signing up...` });
+			if (isFirebaseEnabled) {
+				try {
+					await signUpWithFirebase(value.name || value.username, value.email, value.password);
+					setSubmitted(true);
+					toast.close(toastId);
+				} catch (error) {
+					toast.add({
+						type: "error",
+						description: error instanceof Error ? error.message : t`Failed to create your account. Please try again.`,
+						id: toastId,
+					});
+				}
+				return;
+			}
 
 			const oauthOptions = getOAuthSignInOptions(callbackURL);
 			const createPrompt = new URLSearchParams(oauthOptions.oauth_query).get("prompt")?.split(" ").includes("create");
