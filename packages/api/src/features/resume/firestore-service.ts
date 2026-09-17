@@ -66,7 +66,7 @@ async function loadOwned(id: string, userId: string): Promise<StoredResume> {
 
 async function ownerUsername(userId: string) {
 	const user = await getFirebaseAuth().getUser(userId);
-	return slugify(user.displayName ?? user.email?.split("@")[0] ?? user.uid);
+	return `${slugify(user.displayName ?? user.email?.split("@")[0] ?? "user")}-${user.uid}`;
 }
 
 async function assertUniqueSlug(userId: string, slug: string, excludedId?: string) {
@@ -332,19 +332,22 @@ export const firestoreResumeService = {
 	},
 	patch: async (input: { id: string; userId: string; operations: JsonPatchOperation[]; expectedUpdatedAt?: Date }) => {
 		try {
-			const current = await loadOwned(input.id, input.userId);
-			if (current.isLocked) throw new ORPCError("RESUME_LOCKED");
-			if (input.expectedUpdatedAt && toDate(current.updatedAt).getTime() !== input.expectedUpdatedAt.getTime())
-				throw new ORPCError("RESUME_VERSION_CONFLICT", { status: 409 });
-			const data = parseWritableResumeData(applyResumePatches(parseStoredResumeData(current.data), input.operations));
-			const updated = await firestoreResumeService.update({
-				id: input.id,
-				userId: input.userId,
-				data,
-				skipAutoSnapshot: true,
+			const updated = await db().runTransaction(async (transaction) => {
+				const document = await transaction.get(ref(input.id));
+				const current = document.data() as StoredResume | undefined;
+				if (!current || current.userId !== input.userId) throw new ORPCError("NOT_FOUND");
+				if (current.isLocked) throw new ORPCError("RESUME_LOCKED");
+				if (input.expectedUpdatedAt && toDate(current.updatedAt).getTime() !== input.expectedUpdatedAt.getTime())
+					throw new ORPCError("RESUME_VERSION_CONFLICT", { status: 409 });
+				const data = parseWritableResumeData(
+					applyResumePatches(parseStoredResumeData(current.data), input.operations),
+				);
+				const next = { ...current, data, updatedAt: Timestamp.now() };
+				transaction.set(document.ref, next);
+				return next;
 			});
-			await snapshotVersion({ resumeId: input.id, userId: input.userId, data, label: "AI edit" });
-			return updated;
+			await snapshotVersion({ resumeId: input.id, userId: input.userId, data: updated.data, label: "AI edit" });
+			return publicResume(updated);
 		} catch (error) {
 			if (error instanceof ResumePatchError)
 				throw new ORPCError("INVALID_PATCH_OPERATIONS", { status: 400, message: error.message });
@@ -382,7 +385,7 @@ export const firestoreResumeService = {
 	delete: async ({ id, userId }: { id: string; userId: string }) => {
 		const resume = await loadOwned(id, userId);
 		if (resume.isLocked) throw new ORPCError("RESUME_LOCKED");
-		await ref(id).delete();
+		await db().recursiveDelete(ref(id));
 		const storage = getStorageService();
 		await Promise.allSettled([
 			storage.delete(`uploads/${userId}/screenshots/${id}`),
