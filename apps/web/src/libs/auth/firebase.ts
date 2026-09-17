@@ -14,18 +14,53 @@ import {
 } from "firebase/auth";
 import { slugify } from "@reactive-resume/utils/string";
 
-const firebaseConfig = {
+type FirebaseWebConfig = {
+	apiKey?: string;
+	authDomain?: string;
+	projectId?: string;
+};
+
+const buildTimeFirebaseConfig: FirebaseWebConfig = {
 	apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
 	authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
 	projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
 };
 
-export const isFirebaseEnabled = Boolean(
-	firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId,
-);
+export let isFirebaseEnabled = false;
+
+let firebaseConfig: FirebaseWebConfig | null = null;
+let initialization: Promise<void> | null = null;
+
+function isValidFirebaseConfig(config: FirebaseWebConfig): config is Required<FirebaseWebConfig> {
+	return Boolean(config.apiKey && config.authDomain && config.projectId);
+}
+
+async function resolveFirebaseConfig(): Promise<FirebaseWebConfig | null> {
+	if (isValidFirebaseConfig(buildTimeFirebaseConfig)) return buildTimeFirebaseConfig;
+
+	try {
+		const response = await fetch("/api/config/firebase", { headers: { Accept: "application/json" } });
+		if (!response.ok) return null;
+		const runtimeConfig = (await response.json()) as FirebaseWebConfig;
+		return isValidFirebaseConfig(runtimeConfig) ? runtimeConfig : null;
+	} catch {
+		return null;
+	}
+}
+
+export function initializeFirebaseAuth(): Promise<void> {
+	initialization ??= resolveFirebaseConfig().then((config) => {
+		if (!config) return;
+		firebaseConfig = config;
+		const app = getApps().length > 0 ? getApp() : initializeApp(config);
+		getAuth(app);
+		isFirebaseEnabled = true;
+	});
+	return initialization;
+}
 
 const getFirebaseAuth = () => {
-	if (!isFirebaseEnabled) throw new Error("Firebase web credentials are not configured");
+	if (!isFirebaseEnabled || !firebaseConfig) throw new Error("Firebase web credentials are not configured");
 	const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 	return getAuth(app);
 };
