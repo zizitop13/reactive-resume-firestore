@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { auth, verifyOAuthToken } from "@reactive-resume/auth/config";
 import { db } from "@reactive-resume/db/client";
 import { user } from "@reactive-resume/db/schema";
+import { slugify } from "@reactive-resume/utils/string";
 import { getFirebaseAuth, isFirebaseConfigured } from "./features/firebase/admin";
 
 interface ORPCContext {
@@ -22,16 +23,26 @@ async function getUserFromBearerToken(headers: Headers): Promise<User | null> {
 
 		if (isFirebaseConfigured) {
 			const decoded = await getFirebaseAuth().verifyIdToken(token);
-			const now = new Date();
-			return {
-				id: decoded.uid,
-				name: decoded.name ?? decoded.email?.split("@")[0] ?? "User",
-				email: decoded.email ?? `${decoded.uid}@firebase.local`,
-				emailVerified: decoded.email_verified ?? false,
-				image: decoded.picture ?? null,
-				createdAt: now,
-				updatedAt: now,
-			};
+			const name = decoded.name ?? decoded.email?.split("@")[0] ?? "User";
+			const email = decoded.email ?? `${decoded.uid}@firebase.local`;
+			const username = `${slugify(decoded.name ?? decoded.email?.split("@")[0] ?? "user")}-${decoded.uid}`;
+			const [firebaseUser] = await db
+				.insert(user)
+				.values({
+					id: decoded.uid,
+					name,
+					email,
+					emailVerified: decoded.email_verified ?? false,
+					image: decoded.picture ?? null,
+					username,
+					displayUsername: username,
+				})
+				.onConflictDoUpdate({
+					target: user.id,
+					set: { name, email, emailVerified: decoded.email_verified ?? false, image: decoded.picture ?? null },
+				})
+				.returning();
+			return firebaseUser ?? null;
 		}
 
 		const payload = await verifyOAuthToken(token);
