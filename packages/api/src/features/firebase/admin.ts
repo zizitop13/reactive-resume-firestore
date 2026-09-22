@@ -19,15 +19,21 @@ function getFirebaseApp() {
 	const privateKey = env.FIREBASE_PRIVATE_KEY;
 	if (!projectId || !clientEmail || !privateKey) throw new Error("Firebase Admin credentials are incomplete");
 
+	const useEmulators = Boolean(env.FIRESTORE_EMULATOR_HOST && env.FIREBASE_AUTH_EMULATOR_HOST);
+
 	return (
 		getApps()[0] ??
-		initializeApp({
-			credential: cert({
-				projectId,
-				clientEmail,
-				privateKey: privateKey.replace(/\\n/g, "\n"),
-			}),
-		})
+		initializeApp(
+			useEmulators
+				? { projectId }
+				: {
+						credential: cert({
+							projectId,
+							clientEmail,
+							privateKey: privateKey.replace(/\\n/g, "\n"),
+						}),
+					},
+		)
 	);
 }
 
