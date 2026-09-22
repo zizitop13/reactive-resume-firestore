@@ -36,7 +36,7 @@ import { generateId, generateRandomName, slugify } from "@reactive-resume/utils/
 import { ChipInput } from "@/components/input/chip-input";
 import { usePatchResume } from "@/features/resume/builder/draft";
 import { useFormBlocker } from "@/hooks/use-form-blocker";
-import { authClient } from "@/libs/auth/client";
+import { useAuthSession } from "@/libs/auth/use-session";
 import { getResumeErrorMessage } from "@/libs/error-message";
 import { orpc } from "@/libs/orpc/client";
 import { useAppForm, withForm } from "@/libs/tanstack-form";
@@ -342,7 +342,7 @@ export function DuplicateResumeDialog({ data }: DialogProps<"resume.duplicate">)
 const ResumeForm = withForm({
 	defaultValues,
 	render: function ResumeFormRenderer({ form }) {
-		const { data: session } = authClient.useSession();
+		const { data: session } = useAuthSession();
 
 		const slugPrefix = `${window.location.origin}/${session?.user.username ?? ""}/`;
 

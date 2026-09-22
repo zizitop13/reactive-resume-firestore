@@ -1,0 +1,10 @@
+FROM node:24-bookworm-slim
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends openjdk-17-jre-headless \
+	&& npm install --global firebase-tools@14.16.0 \
+	&& rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+CMD ["firebase", "emulators:start", "--project", "demo-reactive-resume", "--only", "auth,firestore", "--import", "/data", "--export-on-exit", "/data"]

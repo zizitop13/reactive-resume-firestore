@@ -18,6 +18,7 @@ import { handleLlms, handleRobots, handleSitemap } from "../static/seo";
 import { handleUpload } from "../static/uploads";
 import { handleWebApp, serveWebDistStatic } from "../static/web";
 import { handleAuth, handleOAuth } from "./auth";
+import { handleFirebaseConfig } from "./firebase-config";
 import { handleHealth } from "./health";
 import { handlePublicResumePdf } from "./public-resume-pdf";
 import { handleResumePdfDownload } from "./resume-pdf";
@@ -50,6 +51,7 @@ export function createApp() {
 	app.all("/api/openapi/*", (c) => handleOpenApi(c.req.raw, getTrustedClient(c)));
 	app.get("/api/auth/oauth", (c) => handleOAuth(c.req.raw));
 	app.all("/api/auth/*", (c) => handleAuth(c.req.raw));
+	app.get("/api/config/firebase", () => handleFirebaseConfig());
 	app.get("/api/health", () => handleHealth());
 	app.get("/api/resumes/:username/:slug/pdf", (c) =>
 		handlePublicResumePdf(c.req.raw, c.req.param("username"), c.req.param("slug"), getTrustedClient(c)),

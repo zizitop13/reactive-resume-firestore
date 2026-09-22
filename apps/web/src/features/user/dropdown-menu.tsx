@@ -21,6 +21,8 @@ import {
 import { toast } from "@reactive-resume/ui/components/toast";
 import { useTheme } from "@/features/theme/provider";
 import { authClient } from "@/libs/auth/client";
+import { isFirebaseEnabled, signOutFirebase } from "@/libs/auth/firebase";
+import { useAuthSession } from "@/libs/auth/use-session";
 import { getReadableErrorMessage } from "@/libs/error-message";
 import { changeLocale, localeMap } from "@/libs/locale";
 import { isTheme } from "@/libs/theme";
@@ -34,7 +36,7 @@ export function UserDropdownMenu({ children }: Props) {
 	const router = useRouter();
 	const { i18n } = useLingui();
 	const { theme, setTheme } = useTheme();
-	const { data: session } = authClient.useSession();
+	const { data: session } = useAuthSession();
 
 	const handleThemeChange = (value: string) => {
 		if (!isTheme(value)) return;
@@ -43,6 +45,13 @@ export function UserDropdownMenu({ children }: Props) {
 
 	const handleLogout = async () => {
 		const toastId = toast.add({ type: "loading", description: t`Signing out...` });
+
+		if (isFirebaseEnabled) {
+			await signOutFirebase();
+			toast.close(toastId);
+			await router.invalidate();
+			return;
+		}
 
 		await authClient.signOut({
 			fetchOptions: {

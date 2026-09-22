@@ -11,6 +11,7 @@ import { FormControl, FormDescription, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@reactive-resume/ui/components/input";
 import { toast } from "@reactive-resume/ui/components/toast";
 import { authClient } from "@/libs/auth/client";
+import { isFirebaseEnabled, signInWithFirebase } from "@/libs/auth/firebase";
 import { orpc } from "@/libs/orpc/client";
 import { useAppForm } from "@/libs/tanstack-form";
 import { SocialAuth } from "../components/social-auth";
@@ -43,6 +44,14 @@ export function LoginPage({ disableEmailAuth, disableSignups }: Props) {
 			const toastId = toast.add({ type: "loading", description: t`Signing in...` });
 
 			try {
+				if (isFirebaseEnabled) {
+					await signInWithFirebase(value.identifier, value.password);
+					toast.close(toastId);
+					await router.invalidate();
+					void navigate(getAuthRedirectOptions(callbackURL));
+					return;
+				}
+
 				const isEmail = value.identifier.includes("@");
 
 				const result = isEmail
@@ -94,7 +103,7 @@ export function LoginPage({ disableEmailAuth, disableSignups }: Props) {
 	});
 
 	useEffect(() => {
-		if (!("passkey" in providers)) return;
+		if (isFirebaseEnabled || !("passkey" in providers)) return;
 		if (typeof window === "undefined") return;
 		if (!("PublicKeyCredential" in window)) return;
 		if (!PublicKeyCredential.isConditionalMediationAvailable) return;

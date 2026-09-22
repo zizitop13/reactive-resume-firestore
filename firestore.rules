@@ -1,0 +1,12 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reactive Resume accesses Firestore only through Firebase Admin on the server.
+    // Keep direct browser access disabled; Firebase Authentication tokens are sent
+    // to the application API, which enforces ownership and public-resume access.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
