@@ -39,6 +39,21 @@ firebase deploy --only firestore:rules,firestore:indexes
 `firestore.rules` denies direct browser access. All Firestore reads and writes pass through the Reactive Resume server,
 where Firebase ID tokens and document ownership are validated.
 
+## Local emulator stack
+
+Use the Firebase development overlay together with the regular development Compose file:
+
+```bash
+docker compose -f compose.dev.yml -f compose.firebase.dev.yml --profile app up --build
+```
+
+This starts the application plus Firebase Authentication and Firestore emulators. The Emulator Suite UI is available at
+`http://localhost:4000`; Firestore uses port `8080`, and Authentication uses port `9099`. Emulator data is persisted in
+the `firebase_data` volume and exported when the emulator container stops.
+
+The overlay supplies demo-only Firebase values and emulator hosts to the application. Do not reuse these values outside
+local development.
+
 ## Data layout
 
 - `resumes/{resumeId}` stores resume data and aggregate statistics.
