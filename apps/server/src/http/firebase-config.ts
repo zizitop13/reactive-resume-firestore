@@ -16,6 +16,7 @@ export function handleFirebaseConfig() {
 					apiKey: env.VITE_FIREBASE_API_KEY,
 					authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
 					projectId: env.VITE_FIREBASE_PROJECT_ID,
+					authEmulatorUrl: env.FIREBASE_AUTH_EMULATOR_URL,
 				}
 			: {},
 		{ headers: { "Cache-Control": "no-store" } },
