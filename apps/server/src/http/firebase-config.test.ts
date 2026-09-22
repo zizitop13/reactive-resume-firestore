@@ -19,6 +19,7 @@ describe("Firebase runtime configuration", () => {
 			VITE_FIREBASE_API_KEY: "public-api-key",
 			VITE_FIREBASE_AUTH_DOMAIN: "example.firebaseapp.com",
 			VITE_FIREBASE_PROJECT_ID: "web-project",
+			FIREBASE_AUTH_EMULATOR_URL: "http://127.0.0.1:9099",
 		});
 
 		const response = handleFirebaseConfig();
@@ -28,6 +29,7 @@ describe("Firebase runtime configuration", () => {
 			apiKey: "public-api-key",
 			authDomain: "example.firebaseapp.com",
 			projectId: "web-project",
+			authEmulatorUrl: "http://127.0.0.1:9099",
 		});
 	});
 
