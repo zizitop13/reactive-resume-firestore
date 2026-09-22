@@ -2,6 +2,7 @@ import type { AuthSession } from "@reactive-resume/auth/types";
 import type { User } from "firebase/auth";
 import { getApp, getApps, initializeApp } from "firebase/app";
 import {
+	connectAuthEmulator,
 	createUserWithEmailAndPassword,
 	signOut as firebaseSignOut,
 	GoogleAuthProvider,
@@ -18,6 +19,7 @@ type FirebaseWebConfig = {
 	apiKey?: string;
 	authDomain?: string;
 	projectId?: string;
+	authEmulatorUrl?: string;
 };
 
 const buildTimeFirebaseConfig: FirebaseWebConfig = {
@@ -53,7 +55,8 @@ export function initializeFirebaseAuth(): Promise<void> {
 		if (!config) return;
 		firebaseConfig = config;
 		const app = getApps().length > 0 ? getApp() : initializeApp(config);
-		getAuth(app);
+		const auth = getAuth(app);
+		if (config.authEmulatorUrl) connectAuthEmulator(auth, config.authEmulatorUrl, { disableWarnings: true });
 		isFirebaseEnabled = true;
 	});
 	return initialization;
