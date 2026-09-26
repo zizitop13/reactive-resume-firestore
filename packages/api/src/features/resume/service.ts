@@ -12,10 +12,12 @@ import * as schema from "@reactive-resume/db/schema";
 import { applyResumePatches, ResumePatchError } from "@reactive-resume/resume/patch";
 import { defaultResumeData } from "@reactive-resume/schema/resume/default";
 import { generateId } from "@reactive-resume/utils/string";
+import { isFirebaseConfigured } from "../firebase/admin";
 import { getStorageService } from "../storage/service";
 import { grantResumeAccess, hasResumeAccess } from "./access";
 import { assertCanView, isOwner, redactResumeForViewer, shouldCountForStatistics } from "./access-policy";
 import { publishResumeUpdated } from "./events";
+import { firestoreResumeService } from "./firestore-service";
 import { parseStoredResumeData, parseWritableResumeData } from "./resume-data-validation";
 import { clientKeyFromHeaders, shouldCountView } from "./view-dedup";
 
@@ -378,7 +380,7 @@ async function notifyResumeUpdated(event: ResumeUpdatedEvent) {
 	}
 }
 
-export const resumeService = {
+export const postgresResumeService = {
 	tags,
 	statistics,
 
@@ -416,7 +418,7 @@ export const resumeService = {
 		// prior versions remain and the restore is itself just another (snapshot-able, undoable) change.
 		restore: async (input: { resumeId: string; versionId: string; userId: string }) => {
 			// Check lock state before loading or validating historical data so locked resumes fail without expensive work.
-			const current = await resumeService.getById({ id: input.resumeId, userId: input.userId });
+			const current = await postgresResumeService.getById({ id: input.resumeId, userId: input.userId });
 			if (current.isLocked) throw new ORPCError("RESUME_LOCKED");
 
 			const [version] = await db
@@ -435,21 +437,21 @@ export const resumeService = {
 			const versionData = parseStoredResumeData(version.data);
 
 			// Capture the pre-restore state first so the restore itself is undoable.
-			await resumeService.versions.snapshot({
+			await postgresResumeService.versions.snapshot({
 				resumeId: input.resumeId,
 				userId: input.userId,
 				data: current.data,
 				label: "Before restore",
 			});
 
-			const updated = await resumeService.update({
+			const updated = await postgresResumeService.update({
 				id: input.resumeId,
 				userId: input.userId,
 				data: versionData,
 				skipAutoSnapshot: true,
 			});
 
-			await resumeService.versions.snapshot({
+			await postgresResumeService.versions.snapshot({
 				resumeId: input.resumeId,
 				userId: input.userId,
 				data: updated.data,
@@ -558,7 +560,7 @@ export const resumeService = {
 		if (shouldCountForStatistics(resume, viewer)) {
 			const key = `${resume.id}:${clientKeyFromHeaders(input.requestHeaders)}`;
 			if (shouldCountView(key, Date.now())) {
-				await resumeService.statistics.increment({ id: resume.id, views: true });
+				await postgresResumeService.statistics.increment({ id: resume.id, views: true });
 			}
 		}
 
@@ -838,3 +840,5 @@ export const resumeService = {
 		});
 	},
 };
+
+export const resumeService = isFirebaseConfigured ? firestoreResumeService : postgresResumeService;

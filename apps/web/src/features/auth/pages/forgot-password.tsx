@@ -9,6 +9,7 @@ import { FormControl, FormItem, FormLabel, FormMessage } from "@reactive-resume/
 import { Input } from "@reactive-resume/ui/components/input";
 import { toast } from "@reactive-resume/ui/components/toast";
 import { authClient } from "@/libs/auth/client";
+import { isFirebaseEnabled, requestFirebasePasswordReset } from "@/libs/auth/firebase";
 import { useAppForm } from "@/libs/tanstack-form";
 
 const formSchema = z.object({
@@ -24,10 +25,14 @@ export function ForgotPasswordPage() {
 		onSubmit: async ({ value }) => {
 			const toastId = toast.add({ type: "loading", description: t`Sending password reset email...` });
 
-			const { error } = await authClient.requestPasswordReset({
-				email: value.email,
-				redirectTo: "/auth/reset-password",
-			});
+			const { error } = isFirebaseEnabled
+				? await requestFirebasePasswordReset(value.email)
+						.then(() => ({ error: null }))
+						.catch((error: Error) => ({ error }))
+				: await authClient.requestPasswordReset({
+						email: value.email,
+						redirectTo: "/auth/reset-password",
+					});
 
 			if (error) {
 				toast.add({

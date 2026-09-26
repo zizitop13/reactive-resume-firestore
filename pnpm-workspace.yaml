@@ -4,11 +4,13 @@ packages:
   - tooling
 minimumReleaseAge: 0
 allowBuilds:
+  '@firebase/util': false
   bcrypt: true
   esbuild: true
   lefthook: true
   msgpackr-extract: true
   msw: true
+  protobufjs: false
   sharp: true
 overrides:
   '@better-auth/infra>@better-fetch/fetch': 1.3.2

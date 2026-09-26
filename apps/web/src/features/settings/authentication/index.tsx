@@ -1,4 +1,6 @@
+import { Trans } from "@lingui/react/macro";
 import { m } from "motion/react";
+import { isFirebaseEnabled } from "@/libs/auth/firebase";
 import { useEnabledProviders } from "./components/hooks";
 import { PasskeysSection } from "./components/passkeys";
 import { PasswordSection } from "./components/password";
@@ -7,6 +9,13 @@ import { TwoFactorSection } from "./components/two-factor";
 
 export function AuthenticationSettingsPage() {
 	const { enabledProviders } = useEnabledProviders();
+	if (isFirebaseEnabled) {
+		return (
+			<p className="text-muted-foreground">
+				<Trans>Authentication is managed by Firebase for this instance.</Trans>
+			</p>
+		);
+	}
 
 	return (
 		<m.div

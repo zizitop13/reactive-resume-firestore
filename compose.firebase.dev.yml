@@ -1,0 +1,39 @@
+name: reactive_resume_firebase
+
+services:
+  reactive_resume:
+    environment:
+      FIREBASE_PROJECT_ID: demo-reactive-resume
+      FIREBASE_CLIENT_EMAIL: firebase-adminsdk@demo-reactive-resume.iam.gserviceaccount.com
+      FIREBASE_PRIVATE_KEY: emulator
+      VITE_FIREBASE_API_KEY: demo-api-key
+      VITE_FIREBASE_AUTH_DOMAIN: localhost
+      VITE_FIREBASE_PROJECT_ID: demo-reactive-resume
+      FIRESTORE_EMULATOR_HOST: firebase:8080
+      FIREBASE_AUTH_EMULATOR_HOST: firebase:9099
+      FIREBASE_AUTH_EMULATOR_URL: http://127.0.0.1:9099
+    depends_on:
+      firebase:
+        condition: service_healthy
+
+  firebase:
+    build:
+      context: .
+      dockerfile: Dockerfile.firebase.dev
+    restart: unless-stopped
+    volumes:
+      - .:/workspace:ro
+      - firebase_data:/data
+    ports:
+      - "127.0.0.1:4000:4000"
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:9099:9099"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000').then((r) => { if (!r.ok) process.exit(1); }).catch(() => process.exit(1));"]
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  firebase_data:

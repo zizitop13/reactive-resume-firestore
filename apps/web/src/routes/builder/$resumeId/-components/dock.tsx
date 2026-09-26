@@ -32,7 +32,7 @@ import {
 	useCurrentBuilderResumeSelector,
 	useResumeStore,
 } from "@/features/resume/builder/draft";
-import { authClient } from "@/libs/auth/client";
+import { useAuthSession } from "@/libs/auth/use-session";
 
 type BuilderDockProps = {
 	pageLayout: BuilderPreviewPageLayout;
@@ -40,7 +40,7 @@ type BuilderDockProps = {
 };
 
 export function BuilderDock({ pageLayout, onTogglePageLayout }: BuilderDockProps) {
-	const { data: session } = authClient.useSession();
+	const { data: session } = useAuthSession();
 	// Narrow slices: selecting the whole resume re-renders the dock on every keystroke.
 	const resumeSlug = useCurrentBuilderResumeSelector((resume) => resume.slug);
 	const resumeId = useCurrentBuilderResumeSelector((resume) => resume.id);

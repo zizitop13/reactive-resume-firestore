@@ -6,6 +6,7 @@ import { getDashboardSidebarState, setDashboardSidebarState } from "./-component
 import { DashboardSidebar } from "./-components/sidebar";
 
 export const Route = createFileRoute("/dashboard")({
+	ssr: false,
 	component: RouteComponent,
 	beforeLoad: ({ context }) => {
 		if (!context.session) throw redirect({ to: "/auth/login", replace: true });

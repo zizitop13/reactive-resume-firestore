@@ -13,7 +13,7 @@ import { toast } from "@reactive-resume/ui/components/toast";
 import { useCurrentResume, usePatchResume } from "@/features/resume/builder/draft";
 import { ResumePasswordDialog } from "@/features/resume/builder/password-dialog";
 import { useConfirm } from "@/hooks/use-confirm";
-import { authClient } from "@/libs/auth/client";
+import { useAuthSession } from "@/libs/auth/use-session";
 import { orpc } from "@/libs/orpc/client";
 import { SectionBase } from "../shared/section-base";
 
@@ -21,7 +21,7 @@ export function SharingSectionBuilder() {
 	const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
 	const confirm = useConfirm();
 	const [_, copyToClipboard] = useCopyToClipboard();
-	const { data: session } = authClient.useSession();
+	const { data: session } = useAuthSession();
 	const resume = useCurrentResume();
 	const patchResume = usePatchResume();
 

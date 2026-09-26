@@ -9,6 +9,7 @@ import { Skeleton } from "@reactive-resume/ui/components/skeleton";
 import { toast } from "@reactive-resume/ui/components/toast";
 import { cn } from "@reactive-resume/utils/style";
 import { authClient } from "@/libs/auth/client";
+import { isFirebaseEnabled, signInWithGoogleFirebase } from "@/libs/auth/firebase";
 import { orpc } from "@/libs/orpc/client";
 import { getAuthRedirectOptions, getOAuthPasskeyOptions, getOAuthSignInOptions, isOAuthRedirect } from "../redirect";
 
@@ -27,7 +28,7 @@ export function SocialAuth() {
 				<hr className="flex-1" />
 			</div>
 
-			{isLoading ? <SocialAuthSkeleton /> : <SocialAuthButtons providers={providers} />}
+			{isLoading && !isFirebaseEnabled ? <SocialAuthSkeleton /> : <SocialAuthButtons providers={providers} />}
 		</>
 	);
 }
@@ -73,7 +74,7 @@ function SocialAuthButtons({ providers }: SocialAuthButtonsProps) {
 		toast.close(toastId);
 		if (isOAuthRedirect(data)) return;
 		await router.invalidate();
-		if (isPasskey) void router.navigate(getAuthRedirectOptions(callbackURL));
+		if (isPasskey || isFirebaseEnabled) void router.navigate(getAuthRedirectOptions(callbackURL));
 	};
 
 	return (
@@ -89,7 +90,7 @@ function SocialAuthButtons({ providers }: SocialAuthButtonsProps) {
 						}),
 					)
 				}
-				className={cn("hidden", "custom" in providers && "inline-flex")}
+				className={cn("hidden", !isFirebaseEnabled && "custom" in providers && "inline-flex")}
 			>
 				<VaultIcon />
 				{providers.custom}
@@ -100,7 +101,7 @@ function SocialAuthButtons({ providers }: SocialAuthButtonsProps) {
 				onClick={() =>
 					runSignIn(() => authClient.signIn.passkey({ autoFill: false, ...getOAuthPasskeyOptions(callbackURL) }), true)
 				}
-				className={cn("hidden", "passkey" in providers && "inline-flex")}
+				className={cn("hidden", !isFirebaseEnabled && "passkey" in providers && "inline-flex")}
 			>
 				<FingerprintIcon />
 				<Trans comment="Label for passkey sign-in button">Passkey</Trans>
@@ -109,16 +110,18 @@ function SocialAuthButtons({ providers }: SocialAuthButtonsProps) {
 			<Button
 				onClick={() =>
 					runSignIn(() =>
-						authClient.signIn.social({
-							provider: "google",
-							callbackURL: callbackURL ?? "/dashboard",
-							...getOAuthSignInOptions(callbackURL),
-						}),
+						isFirebaseEnabled
+							? signInWithGoogleFirebase().then((data) => ({ data, error: null }))
+							: authClient.signIn.social({
+									provider: "google",
+									callbackURL: callbackURL ?? "/dashboard",
+									...getOAuthSignInOptions(callbackURL),
+								}),
 					)
 				}
 				className={cn(
 					"hidden flex-1 bg-[#4285F4] text-white hover:bg-[#4285F4]/80",
-					"google" in providers && "inline-flex",
+					(isFirebaseEnabled || "google" in providers) && "inline-flex",
 				)}
 			>
 				<GoogleLogoIcon />
@@ -137,7 +140,7 @@ function SocialAuthButtons({ providers }: SocialAuthButtonsProps) {
 				}
 				className={cn(
 					"hidden flex-1 bg-[#2b3137] text-white hover:bg-[#2b3137]/80",
-					"github" in providers && "inline-flex",
+					!isFirebaseEnabled && "github" in providers && "inline-flex",
 				)}
 			>
 				<GithubLogoIcon />
@@ -156,7 +159,7 @@ function SocialAuthButtons({ providers }: SocialAuthButtonsProps) {
 				}
 				className={cn(
 					"hidden flex-1 bg-[#0A66C2] text-white hover:bg-[#0A66C2]/80",
-					"linkedin" in providers && "inline-flex",
+					!isFirebaseEnabled && "linkedin" in providers && "inline-flex",
 				)}
 			>
 				<LinkedinLogoIcon />
